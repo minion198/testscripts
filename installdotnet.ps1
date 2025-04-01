@@ -1,14 +1,16 @@
 # Define Variables
 $dotnetInstallerUrl = "<ARTIFACTORY_URL>/dotnet-runtime-win-x64.exe"
-$dotnetInstallerPath = "C:\Temp\dotnet-runtime-win-x64.exe"
+$dotnetInstallerPath = "C:\ImagePOC\dotnet-runtime-win-x64.exe"
 $applicationUrl = "<ARTIFACTORY_URL>/SampleApp.zip"
-$appZipPath = "C:\Temp\SampleApp.zip"
-$appExtractPath = "C:\SampleApp"
-$appExecutable = "C:\SampleApp\SampleApp.exe"
+$appZipPath = "C:\ImagePOC\SampleApp.zip"
+$appExtractPath = "C:\ImagePOC\SampleApp"
+$appExecutable = "$appExtractPath\SampleApp.exe"
+$serviceName = "SampleAppService"
+$logFile = "C:\ImagePOC\app-log.txt"
 
-# Create Temp Directory
-Write-Output "Creating temporary directory for installation..."
-New-Item -ItemType Directory -Path "C:\Temp" -Force | Out-Null
+# Create ImagePOC Directory
+Write-Output "Creating ImagePOC directory..."
+New-Item -ItemType Directory -Path "C:\ImagePOC" -Force | Out-Null
 
 # Download .NET Runtime from Artifactory
 Write-Output "Downloading .NET Runtime from Artifactory..."
@@ -44,8 +46,33 @@ if (Test-Path $appExecutable) {
     exit 1
 }
 
-# Cleanup Temp Files
-Write-Output "Cleaning up installation files..."
-Remove-Item -Path "C:\Temp" -Recurse -Force
+# Compile .NET Application (If Source Code is Provided)
+if (Test-Path "$appExtractPath\Program.cs") {
+    Write-Output "Compiling .NET Application..."
+    & "C:\Program Files\dotnet\dotnet.exe" publish "$appExtractPath" -c Release -o "$appExtractPath"
+}
 
-Write-Output "Installation complete. The application is ready to be executed!"
+# Create a Windows Service to Run the Application
+Write-Output "Registering Application as a Windows Service..."
+$servicePath = "$appExtractPath\SampleApp.exe"
+
+# Remove Existing Service (If Any)
+if (Get-Service -Name $serviceName -ErrorAction SilentlyContinue) {
+    Stop-Service -Name $serviceName -Force
+    sc.exe delete $serviceName
+    Start-Sleep -Seconds 3
+}
+
+# Register New Service
+sc.exe create $serviceName binPath= $servicePath start= auto
+Start-Service -Name $serviceName
+
+# Log Application Start
+Write-Output "[$(Get-Date)] Application Service Started." | Out-File -Append -FilePath $logFile
+
+# Cleanup Installation Files
+Write-Output "Cleaning up installation files..."
+Remove-Item -Path $dotnetInstallerPath -Force
+Remove-Item -Path $appZipPath -Force
+
+Write-Output "Installation complete. The application is running as a Windows Service!"

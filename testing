@@ -12,3 +12,19 @@ if (Test-Path $appExecutable) {
 } else {
     Write-Output "ERROR: Compilation failed!"
     exit 1
+
+
+---- worker service --------
+
+# Create a .NET Worker Service instead of a console app
+Write-Output "Creating a .NET Worker Service..."
+New-Item -ItemType Directory -Path $publishPath -Force | Out-Null
+Set-Location -Path $publishPath
+& "C:\Program Files\dotnet\dotnet.exe" new worker -o $publishPath --force
+
+# Replace the default Program.cs with the custom one
+Copy-Item -Path $programCsPath -Destination "$publishPath\Program.cs" -Force
+
+# Publish the Worker Service
+Write-Output "Compiling the Worker Service..."
+& "C:\Program Files\dotnet\dotnet.exe" publish -c Release -o $publishPath

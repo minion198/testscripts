@@ -28,3 +28,17 @@ Copy-Item -Path $programCsPath -Destination "$publishPath\Program.cs" -Force
 # Publish the Worker Service
 Write-Output "Compiling the Worker Service..."
 & "C:\Program Files\dotnet\dotnet.exe" publish -c Release -o $publishPath
+
+-----------Package-------------------
+
+# Navigate to the project folder
+Set-Location -Path $publishPath
+
+# Add the required Windows Services package
+Write-Output "Installing Microsoft.Extensions.Hosting.WindowsServices..."
+& "C:\Program Files\dotnet\dotnet.exe" add package Microsoft.Extensions.Hosting.WindowsServices
+
+# Publish the Worker Service
+Write-Output "Compiling the Worker Service..."
+& "C:\Program Files\dotnet\dotnet.exe" publish -c Release -o $publishPath
+

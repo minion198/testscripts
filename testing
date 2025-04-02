@@ -1,0 +1,14 @@
+# Compile .NET Application
+Write-Output "Compiling .NET Application..."
+New-Item -ItemType Directory -Path $publishPath -Force | Out-Null
+& "C:\Program Files\dotnet\dotnet.exe" new console -o $publishPath --force
+Copy-Item -Path $programCsPath -Destination "$publishPath\Program.cs" -Force
+Set-Location -Path $publishPath
+& "C:\Program Files\dotnet\dotnet.exe" publish -c Release -o $publishPath
+
+# Verify Compilation
+if (Test-Path $appExecutable) {
+    Write-Output "Compilation successful!"
+} else {
+    Write-Output "ERROR: Compilation failed!"
+    exit 1
